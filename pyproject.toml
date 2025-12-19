@@ -1,0 +1,20 @@
+[project]
+name = "linkedin-post-writer"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "apscheduler>=3.11.1",
+    "crewai>=1.7.0",
+    "crewai-tools>=1.7.0",
+    "fastapi-sso>=0.17.0",
+    "fastapi[standard]>=0.124.2",
+    "fpdf2>=2.8.5",
+    "groq>=0.37.1",
+    "langchain-groq>=0.2.0",
+    "litellm>=1.75.3",
+    "pydantic>=2.11.10",
+    "python-dotenv>=1.1.1",
+    "python-multipart>=0.0.20",
+]

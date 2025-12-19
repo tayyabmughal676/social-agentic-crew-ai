@@ -1,0 +1,23 @@
+# Environment & Secrets
+.env
+.env.local
+.venv/
+env/
+venv/
+
+# Python & System
+__pycache__/
+*.py[cod]
+*$py.class
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/
+
+# Project Specific Artifacts
+/storage/db/
+/storage/logs/
+/pdfs/
+/youtube-tutorial-outline.md
+/yt-content.md
