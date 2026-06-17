@@ -13,15 +13,22 @@ from crewai import LLM
 def get_llm() -> LLM:
     """
     Get the configured LLM instance.
-    Currently configured for local LM Studio.
+    Loads configurations dynamically from environment variables for production flexibility.
     """
+    model = os.getenv("LLM_MODEL", "openai/zai-org/glm-4.6v-flash")
+    base_url = os.getenv("LLM_BASE_URL", "http://localhost:1234/v1")
+    api_key = os.getenv("LLM_API_KEY", "lm-studio")
+    timeout = int(os.getenv("LLM_TIMEOUT", "120"))
+    max_tokens = int(os.getenv("LLM_MAX_TOKENS", "2048"))
+    temperature = float(os.getenv("LLM_TEMPERATURE", "0.7"))
+
     return LLM(
-        model="openai/zai-org/glm-4.6v-flash",
-        base_url="http://localhost:1234/v1",
-        api_key="lm-studio",
-        timeout=120,
-        max_tokens=2048,
-        temperature=0.7
+        model=model,
+        base_url=base_url,
+        api_key=api_key,
+        timeout=timeout,
+        max_tokens=max_tokens,
+        temperature=temperature
     )
 
 
@@ -55,8 +62,9 @@ def suppress_openai_warning():
 def setup_crewai_environment():
     """
     Setup environment variables before CrewAI imports.
-    This is the simplest solution - just sets a dummy key.
+    Retrieves the API key or sets a dynamic placeholder fallback.
     """
     if not os.getenv("OPENAI_API_KEY"):
-        os.environ["OPENAI_API_KEY"] = "sk-not-used-using-groq-instead"
+        os.environ["OPENAI_API_KEY"] = os.getenv("LLM_API_KEY") or "sk-not-used-using-groq-instead"
+
 

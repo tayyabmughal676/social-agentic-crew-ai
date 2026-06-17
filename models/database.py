@@ -1,12 +1,19 @@
 import sqlite3
 import json
+import os
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from contextlib import contextmanager
 
 class WorkflowDatabase:
-    def __init__(self, db_path: str = "storage/db/workflows.db"):
-        self.db_path = db_path
+    def __init__(self, db_path: Optional[str] = None):
+        self.db_path = db_path or os.getenv("DATABASE_PATH", "storage/db/workflows.db")
+        
+        # Ensure database directory exists
+        db_dir = os.path.dirname(self.db_path)
+        if db_dir and not os.path.exists(db_dir):
+            os.makedirs(db_dir, exist_ok=True)
+            
         self.init_database()
     
     def init_database(self):
@@ -22,16 +29,25 @@ class WorkflowDatabase:
                     completed_steps TEXT,  -- JSON array
                     estimated_completion TEXT,  -- ISO datetime
                     error_details TEXT,  -- JSON object
+                    result TEXT,           -- Generated content output
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
                 )
             """)
             conn.commit()
+            
+            # Non-destructive migration to add 'result' column if table already exists
+            try:
+                conn.execute("ALTER TABLE workflows ADD COLUMN result TEXT")
+                conn.commit()
+            except sqlite3.OperationalError:
+                # Column already exists, safe to ignore
+                pass
     
     @contextmanager
     def get_connection(self):
-        """Get database connection with proper cleanup"""
-        conn = sqlite3.connect(self.db_path)
+        """Get database connection with proper cleanup and concurrency safety"""
+        conn = sqlite3.connect(self.db_path, timeout=30.0)
         conn.row_factory = sqlite3.Row
         try:
             yield conn
@@ -58,7 +74,7 @@ class WorkflowDatabase:
         values = []
         
         for key, value in kwargs.items():
-            if key in ["status", "current_step", "progress_percentage", "completed_steps", "estimated_completion", "error_details"]:
+            if key in ["status", "current_step", "progress_percentage", "completed_steps", "estimated_completion", "error_details", "result"]:
                 set_clauses.append(f"{key} = ?")
                 if key in ["completed_steps", "error_details"] and isinstance(value, (dict, list)):
                     values.append(json.dumps(value))

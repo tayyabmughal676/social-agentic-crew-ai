@@ -1,15 +1,22 @@
 import time
 import requests
 import sys
+import os
+from dotenv import load_dotenv
 
-BASE_URL = "http://127.0.0.1:8000/api/v1"
+# Load environment variables
+load_dotenv()
+
+BASE_URL = "http://127.0.0.1:8000/api/v1"  # Corrected port to 8000 to match running server
+API_KEY = os.getenv("API_KEY", "test-secret-key-123")
+HEADERS = {"X-API-Key": API_KEY}
 
 def run_test():
     print("🚀 Starting End-to-End Project Test...")
     
     # 1. Health Check
     try:
-        health = requests.get("http://127.0.0.1:8000/health")
+        health = requests.get("http://127.0.0.1:8000/health")  # Corrected port to 8000
         print(f"✅ Server Health: {health.json()}")
     except Exception as e:
         print(f"❌ Server not reachable: {e}")
@@ -29,7 +36,7 @@ def run_test():
     }
     
     print(f"📝 Creating post workflow for topic: {payload['topic']}")
-    resp = requests.post(f"{BASE_URL}/create-post", json=payload)
+    resp = requests.post(f"{BASE_URL}/create-post", json=payload, headers=HEADERS)
     if resp.status_code != 200:
         print(f"❌ Failed to create post: {resp.text}")
         return
@@ -42,7 +49,7 @@ def run_test():
     print(f"⏳ Polling status (waiting for approval stage)...")
     max_retries = 100
     for i in range(max_retries):
-        status_resp = requests.get(f"{BASE_URL}/workflow/{workflow_id}")
+        status_resp = requests.get(f"{BASE_URL}/workflow/{workflow_id}", headers=HEADERS)
         status_data = status_resp.json()
         status = status_data.get("status")
         step = status_data.get("current_step")
@@ -61,12 +68,13 @@ def run_test():
                 json={
                     "workflow_id": workflow_id,
                     "action": "approve"
-                }
+                },
+                headers=HEADERS
             )
             print(f"Approval Response: {approve_resp.json()}")
             
             # Check final status
-            final_resp = requests.get(f"{BASE_URL}/workflow/{workflow_id}")
+            final_resp = requests.get(f"{BASE_URL}/workflow/{workflow_id}", headers=HEADERS)
             print(f"🏆 Final Status: {final_resp.json().get('status')}")
             return
             

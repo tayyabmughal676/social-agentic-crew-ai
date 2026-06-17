@@ -5,11 +5,11 @@ from datetime import datetime
 
 class TopicRequest(BaseModel):
     topic: str = Field(..., description="The topic for the LinkedIn post", min_length=1, max_length=200)
-    urgency: Optional[str] = Field("normal", description="Urgency level: normal, high, low")
-    target_audience: Optional[str] = Field(None, description="Target audience description")
-    tone: Optional[str] = Field("professional", description="Tone: professional, casual, inspirational, educational")
+    urgency: Optional[str] = Field("normal", description="Urgency level: normal, high, low", max_length=20)
+    target_audience: Optional[str] = Field(None, description="Target audience description", max_length=200)
+    tone: Optional[str] = Field("professional", description="Tone: professional, casual, inspirational, educational", max_length=100)
     include_hashtags: Optional[bool] = Field(True, description="Whether to include hashtags")
-    post_length: Optional[str] = Field("medium", description="Post length: short, medium, long")
+    post_length: Optional[str] = Field("medium", description="Post length: short, medium, long", max_length=50)
 
 
 class WorkflowResponse(BaseModel):
@@ -39,6 +39,7 @@ class WorkflowStatus(BaseModel):
     estimated_completion: Optional[datetime] = Field(None, description="Estimated completion time")
     progress_percentage: float = Field(0.0, description="Progress percentage (0-100)")
     error_details: Optional[Dict[str, Any]] = Field(None, description="Detailed error information if workflow failed")
+    result: Optional[str] = Field(None, description="The generated LinkedIn post content / strategy results")
     
     class Config:
         extra = "allow"  # Allow extra fields for flexibility

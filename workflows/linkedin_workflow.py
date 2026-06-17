@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 class LinkedInPostWorkflow:
     def __init__(self):
         self.default_llm = get_llm()
-        os.environ["OPENAI_API_KEY"] = "sk-not-used"
         
         self.research_agent = ResearchAgent().create_agent()
         self.writer_agent = WriterAgent().create_agent()

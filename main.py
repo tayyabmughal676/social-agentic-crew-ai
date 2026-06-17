@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import sys
 import os
 import logging
@@ -23,9 +25,10 @@ logging.basicConfig(
     ]
 )
 
-# Set dummy OPENAI_API_KEY before CrewAI imports
-if not os.getenv("OPENAI_API_KEY"):
-    os.environ["OPENAI_API_KEY"] = "sk-not-used-using-groq-instead"
+from utils.llm_setup import setup_crewai_environment
+
+# Set dynamic environment setup before CrewAI routing and imports
+setup_crewai_environment()
 
 from api.routes import router
 
@@ -36,10 +39,18 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Add CORS middleware
+# Add CORS middleware with restricted origins for production safety
+allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "")
+if allowed_origins_str:
+    allowed_origins = [origin.strip() for origin in allowed_origins_str.split(",") if origin.strip()]
+else:
+    # Safe fallback: allow all if DEBUG=True, otherwise restrict to standard local ports
+    is_debug = os.getenv("DEBUG", "false").lower() == "true"
+    allowed_origins = ["*"] if is_debug else ["http://localhost:3000", "http://localhost:8010"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -48,21 +59,14 @@ app.add_middleware(
 # Include API routes
 app.include_router(router)
 
+# Mount frontend static files (CSS, JS, assets)
+app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
 
-@app.get("/")
+
+@app.get("/", include_in_schema=False)
 async def root():
-    """Root endpoint"""
-    return {
-        "message": "LinkedIn Post Writer API",
-        "version": "1.0.0",
-        "status": "running",
-        "endpoints": {
-            "create_post": "/api/v1/create-post",
-            "workflow_status": "/api/v1/workflow/{workflow_id}",
-            "approve_workflow": "/api/v1/workflow/{workflow_id}/approve",
-            "list_workflows": "/api/v1/workflows"
-        }
-    }
+    """Serve the HTMX dashboard frontend"""
+    return FileResponse("frontend/index.html")
 
 
 @app.get("/health")
